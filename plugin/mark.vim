@@ -1,4 +1,4 @@
-" Script Name: mark.vim
+﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously. 
 "
 " Copyright:   (C) 2005-2008 by Yuheng Xie
