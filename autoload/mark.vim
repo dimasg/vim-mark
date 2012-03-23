@@ -23,7 +23,8 @@
 "   set l:isWrapped instead. 
 " - FIX: Wrong logic for determining l:isWrapped lets wrap-around go undetected
 "   when v:count >= number of total matches. [l:startLine, l:startCol] must
-"   be updated on every iteration. 
+"   be updated on every iteration, and should therefore be named [l:prevLine,
+"   l:prevCol]. 
 "
 " 17-May-2011, Ingo Karkat
 " - Make s:GetVisualSelection() public to allow use in suggested
@@ -531,7 +532,7 @@ function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
 	let l:isMatch = 0
 	let l:line = 0
 	while l:count > 0
-		let [l:startLine, l:startCol] = [line('.'), col('.')]
+		let [l:prevLine, l:prevCol] = [line('.'), col('.')]
 
 		" Search for next match, 'wrapscan' applies. 
 		let [l:line, l:col] = searchpos( a:pattern, (a:isBackward ? 'b' : '') )
@@ -571,9 +572,9 @@ function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
 
 			" Note: No need to check 'wrapscan'; the wrapping can only occur if
 			" 'wrapscan' is actually on. 
-			if ! a:isBackward && (l:startLine > l:line || l:startLine == l:line && l:startCol >= l:col)
+			if ! a:isBackward && (l:prevLine > l:line || l:prevLine == l:line && l:prevCol >= l:col)
 				let l:isWrapped = 1
-			elseif a:isBackward && (l:startLine < l:line || l:startLine == l:line && l:startCol <= l:col)
+			elseif a:isBackward && (l:prevLine < l:line || l:prevLine == l:line && l:prevCol <= l:col)
 				let l:isWrapped = 1
 			endif
 		else

@@ -1,8 +1,8 @@
 ﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously. 
 "
-" Copyright:   (C) 2005-2008 by Yuheng Xie
-"              (C) 2008-2011 by Ingo Karkat
+" Copyright:   (C) 2005-2008 Yuheng Xie
+"              (C) 2008-2012 Ingo Karkat
 "   The VIM LICENSE applies to this script; see ':help copyright'. 
 "
 " Maintainer:  Ingo Karkat <ingo@karkat.de> 
@@ -13,8 +13,12 @@
 "  - Requires Vim 7.1 with "matchadd()", or Vim 7.2 or higher. 
 "  - mark.vim autoload script. 
 " 
-" Version:     2.5.0
+" Version:     2.5.3
 " Changes:
+" 02-Mar-2012, Philipp Marek
+" - BUG: Version check mistakenly excluded Vim 7.1 versions that do have the
+"   matchadd() function. 
+"
 " 06-May-2011, Ingo Karkat
 " - By default, enable g:mwAutoSaveMarks, so that marks are always persisted,
 "   but disable g:mwAutoLoadMarks, so that persisted marks have to be explicitly
@@ -152,7 +156,7 @@
 "     -> e.g. :Mark Mark.\{-}\ze(
 
 " Avoid installing twice or when in unsupported Vim version. 
-if exists('g:loaded_mark') || (v:version == 701 && ! exists('*matchadd')) || (v:version < 702)
+if exists('g:loaded_mark') || (v:version == 701 && ! exists('*matchadd')) || (v:version < 701)
 	finish
 endif
 let g:loaded_mark = 1
