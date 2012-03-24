@@ -1,4 +1,4 @@
-﻿*mark.txt*              Highlight several words in different colors simultaneously.
+*mark.txt*              Highlight several words in different colors simultaneously.
 
 			    MARK    by Ingo Karkat
 		       (original version by Yuheng Xie)
@@ -169,6 +169,22 @@ Or you can define custom commands that preset certain marks: >
     command -bar MyMarks silent MarkClear | execute '5Mark foo' | execute '6Mark bar'
 Or a command that adds to the existing marks and then toggles them: >
     command -bar ToggleFooBarMarks execute 'Mark foo' | execute 'Mark bar'
+<
+MARK INFORMATION					    *mark-information*
+
+Both |mark-highlighting| and |mark-searching| commands print information about
+the mark and search pattern, e.g.
+	mark-1/\<pattern\> ~
+This is especially useful when you want to add or subtract patterns to a mark
+highlight group via [N].
+
+								      *:Marks*
+:Marks			List all mark highlight groups and the search patterns
+			defined for them.
+			The group that will be used for the next |:Mark| or
+			|<Leader>m| command (with [N]) is shown with a "+".
+			The last mark used for a search (via |<Leader>*|) is
+			shown with a "*".
 
 ==============================================================================
 INSTALLATION						   *mark-installation*
@@ -270,6 +286,19 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.6.1	23-Mar-2012
+- ENH: Add :Marks command that prints all mark highlight groups and their
+  search patterns, plus information about the current search mark, next mark
+  group, and whether marks are disabled.
+- ENH: Show which mark group a pattern was set / added / removed / cleared.
+- FIX: When the cursor is positioned on the current mark, [N]<Leader>n /
+  <Plug>MarkClear with [N] appended the pattern for the current mark (again
+  and again) instead of clearing it. Must not pass current mark pattern when
+  [N] is given.
+- CHG: Show mark group number in same-mark search and rename search types from
+  "any-mark", "same-mark", and "new-mark" to the shorter "mark-*", "mark-N",
+  and "mark-N!", respectively.
 
 2.6.0	22-Mar-2012
 - ENH: Allow [count] for <Leader>m and :Mark to add / subtract match to / from
