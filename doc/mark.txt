@@ -64,6 +64,18 @@ HIGHLIGHTING						   *mark-highlighting*
 			you can highlight multiple words with the same color.
 			When the word is already contained in the list of
 			alternatives, it is removed.
+
+			When [N] is greater than the number of defined mark
+			groups, a summary of marks is printed. Active mark
+			groups are prefixed with "*" (or "M*" when there are
+			M pattern alternatives), the default next group with
+			">", the last used search with "/" (like |:Marks|
+			does). Input the mark group, accept the default with
+			<CR>, or abort with <Esc> or any other key.
+			This way, when unsure about which number represents
+			which color, just use 99<Leader>n and pick the color
+			interactively!
+
 {Visual}[N]<Leader>m	Ditto, based on the visual selection.
 
 						     *<Leader>r* *v_<Leader>r*
@@ -182,9 +194,9 @@ highlight group via [N].
 :Marks			List all mark highlight groups and the search patterns
 			defined for them.
 			The group that will be used for the next |:Mark| or
-			|<Leader>m| command (with [N]) is shown with a "+".
+			|<Leader>m| command (with [N]) is shown with a ">".
 			The last mark used for a search (via |<Leader>*|) is
-			shown with a "*".
+			shown with a "/".
 
 ==============================================================================
 INSTALLATION						   *mark-installation*
@@ -286,6 +298,13 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.6.2	26-Mar-2012
+- ENH: When a [count] exceeding the number of available mark groups is given,
+  a summary of marks is given and the user is asked to select a mark group.
+  This allows to interactively choose a color via 99<Leader>m.
+- ENH: Include count of alternative patterns in :Marks list.
+- CHG: Use ">" for next mark and "/" for last search in :Marks.
 
 2.6.1	23-Mar-2012
 - ENH: Add :Marks command that prints all mark highlight groups and their

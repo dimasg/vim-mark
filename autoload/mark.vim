@@ -10,8 +10,15 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.6.1
+" Version:     2.6.2
 " Changes:
+" 26-Mar-2012, Ingo Karkat
+" - ENH: When a [count] exceeding the number of available mark groups is given,
+"   a summary of marks is given and the user is asked to select a mark group.
+"   This allows to interactively choose a color via 99<Leader>m.
+" - ENH: Include count of alternative patterns in :Marks list.
+" - CHG: Use ">" for next mark and "/" for last search in :Marks.
+"
 " 23-Mar-2012, Ingo Karkat
 " - ENH: Add :Marks command that prints all mark highlight groups and their
 "   search patterns, plus information about the current search mark, next mark
@@ -262,7 +269,7 @@ function! s:Cycle( ... )
 	let s:cycle = (l:newCycle < s:markNum ? l:newCycle : 0)
 	return l:currentCycle
 endfunction
-function! s:FreeGroup()
+function! s:FreeGroupIndex()
 	let i = 0
 	while i < s:markNum
 		if empty(s:pattern[i])
@@ -455,27 +462,31 @@ function! mark#DoMark( groupNum, ...)
 		endif
 	endif
 
-	if a:groupNum > s:markNum
+	let l:groupNum = a:groupNum
+	if l:groupNum > s:markNum
 		" This highlight group does not exist.
-		return 0
+		let l:groupNum = mark#QueryMarkGroupNum()
+		if l:groupNum < 1 || l:groupNum > s:markNum
+			return 0
+		endif
 	endif
 
 	let regexp = (a:0 ? a:1 : '')
 	if empty(regexp)
-		if a:groupNum == 0
+		if l:groupNum == 0
 			" Disable all marks.
 			call s:MarkEnable(0)
 			call s:EchoMarksDisabled()
 		else
 			" Clear the mark represented by the passed highlight group number.
-			call s:ClearMark(a:groupNum - 1)
-			call s:EchoMarkCleared(a:groupNum)
+			call s:ClearMark(l:groupNum - 1)
+			call s:EchoMarkCleared(l:groupNum)
 		endif
 
 		return 1
 	endif
 
-	if a:groupNum == 0
+	if l:groupNum == 0
 		" Clear the mark if it has been marked.
 		let i = 0
 		while i < s:markNum
@@ -489,7 +500,7 @@ function! mark#DoMark( groupNum, ...)
 	else
 		" Add / subtract the pattern as an alternative to the mark represented
 		" by the passed highlight group number.
-		let existingPattern = s:pattern[a:groupNum - 1]
+		let existingPattern = s:pattern[l:groupNum - 1]
 		if ! empty(existingPattern)
 			" Split only on \|, but not on \\|.
 			let alternatives = split(existingPattern, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\|')
@@ -498,8 +509,8 @@ function! mark#DoMark( groupNum, ...)
 			else
 				let regexp = join(filter(alternatives, 'v:val !=# regexp'), '\|')
 				if empty(regexp)
-					call s:ClearMark(a:groupNum - 1)
-					call s:EchoMarkCleared(a:groupNum)
+					call s:ClearMark(l:groupNum - 1)
+					call s:EchoMarkCleared(l:groupNum)
 					return 1
 				endif
 			endif
@@ -514,8 +525,8 @@ function! mark#DoMark( groupNum, ...)
 		call histadd('@', regexp)
 	endif
 
-	if a:groupNum == 0
-		let i = s:FreeGroup()
+	if l:groupNum == 0
+		let i = s:FreeGroupIndex()
 		if i != -1
 			" Choose an unused highlight group. The last search is kept untouched.
 			call s:Cycle(i)
@@ -526,7 +537,7 @@ function! mark#DoMark( groupNum, ...)
 			call s:SetMark(i, regexp, -1)
 		endif
 	else
-		let i = a:groupNum - 1
+		let i = l:groupNum - 1
 		" Use and extend the passed highlight group. A last search is updated
 		" and thereby kept active.
 		call s:SetMark(i, regexp, i)
@@ -835,28 +846,73 @@ function! mark#SaveCommand()
 	endif
 endfunction
 
+
+" Query mark group number.
+function! s:GetNextGroupIndex()
+	let l:nextGroupIndex = s:FreeGroupIndex()
+	if l:nextGroupIndex == -1
+		let l:nextGroupIndex = s:cycle
+	endif
+	return l:nextGroupIndex
+endfunction
+function! s:GetMarker( index, nextGroupIndex )
+	let l:marker = ''
+	if s:lastSearch == a:index
+		let l:marker .= '/'
+	endif
+	if a:index == a:nextGroupIndex
+		let l:marker .= '>'
+	endif
+	return l:marker
+endfunction
+function! s:GetAlternativeCount( pattern )
+	return len(split(a:pattern, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\|'))
+endfunction
+function! s:PrintMarkGroup( nextGroupIndex )
+	for i in range(s:markNum)
+		echon ' '
+		execute 'echohl MarkWord' . (i + 1)
+		let c = s:GetAlternativeCount(s:pattern[i])
+		echon printf('%1s%s%2d ', s:GetMarker(i, a:nextGroupIndex), (c ? (c > 1 ? c : '') . '*' : ''), (i + 1))
+		echohl None
+	endfor
+endfunction
+function! mark#QueryMarkGroupNum()
+	echohl Question
+	echo 'Mark?'
+	echohl None
+	let l:nextGroupIndex = s:GetNextGroupIndex()
+	call s:PrintMarkGroup(l:nextGroupIndex)
+
+	let l:nr = 0
+	while 1
+		let l:char = nr2char(getchar())
+
+		if l:char ==# "\<CR>"
+			return (l:nr == 0 ? l:nextGroupIndex + 1 : l:nr)
+		elseif l:char !~# '\d'
+			return -1
+		endif
+		echon l:char
+
+		let l:nr = 10 * l:nr + l:char
+		if s:markNum < 10 * l:nr
+			return l:nr
+		endif
+	endwhile
+endfunction
+
 " :Marks command.
 function! mark#List()
-	let l:nextGroupNum = s:FreeGroup()
-	if l:nextGroupNum == -1
-		let l:nextGroupNum = s:cycle
-	endif
-
 	echohl Title
-	echo ' #   Pattern'
+	echo 'mark  cnt  Pattern'
 	echohl None
-	echon '  (+ next mark group   * current search mark)'
+	echon '  (> next mark group   / current search mark)'
+	let l:nextGroupIndex = s:GetNextGroupIndex()
 	for i in range(s:markNum)
 		execute 'echohl MarkWord' . (i + 1)
-		let l:marker = ''
-		if s:lastSearch == i
-			let l:marker .= '*'
-		endif
-		if i == l:nextGroupNum
-			let l:marker .= '+'
-		endif
-
-		echo printf('%1s%2d: %s', l:marker, (i + 1), s:pattern[i])
+		let c = s:GetAlternativeCount(s:pattern[i])
+		echo printf('%1s%3d%4s %s', s:GetMarker(i, l:nextGroupIndex), (i + 1), (c > 1 ? '('.c.')' : ''), s:pattern[i])
 		echohl None
 	endfor
 
