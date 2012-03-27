@@ -13,8 +13,13 @@
 "  - Requires Vim 7.1 with "matchadd()", or Vim 7.2 or higher.
 "  - mark.vim autoload script.
 "
-" Version:     2.6.1
+" Version:     2.6.3
 " Changes:
+" 27-Mar-2012, Ingo Karkat
+" - ENH: Allow choosing of palette and limiting of default mark highlight groups
+"   via g:mwDefaultHighlightingPalette and g:mwDefaultHighlightingNum.
+" - ENH: Offer an extended color palette in addition to the original 6-color one.
+"
 " 23-Mar-2012, Ingo Karkat
 " - ENH: Add :Marks command that prints all mark highlight groups and their
 "   search patterns, plus information about the current search mark, next mark
@@ -174,6 +179,8 @@ if exists('g:loaded_mark') || (v:version == 701 && ! exists('*matchadd')) || (v:
 	finish
 endif
 let g:loaded_mark = 1
+let s:save_cpo = &cpo
+set cpo&vim
 
 "- configuration --------------------------------------------------------------
 if ! exists('g:mwHistAdd')
@@ -188,16 +195,63 @@ if ! exists('g:mwAutoSaveMarks')
 	let g:mwAutoSaveMarks = 1
 endif
 
+if ! exists('g:mwDefaultHighlightingNum')
+	let g:mwDefaultHighlightingNum = -1
+endif
+if ! exists('g:mwDefaultHighlightingPalette')
+	let g:mwDefaultHighlightingPalette = 'original'
+endif
+
 
 "- default highlightings ------------------------------------------------------
 function! s:DefaultHighlightings()
-	" You may define your own colors in your vimrc file, in the form as below:
-	highlight def MarkWord1  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black
-	highlight def MarkWord2  ctermbg=Green    ctermfg=Black  guibg=#A4E57E    guifg=Black
-	highlight def MarkWord3  ctermbg=Yellow   ctermfg=Black  guibg=#FFDB72    guifg=Black
-	highlight def MarkWord4  ctermbg=Red      ctermfg=Black  guibg=#FF7272    guifg=Black
-	highlight def MarkWord5  ctermbg=Magenta  ctermfg=Black  guibg=#FFB3FF    guifg=Black
-	highlight def MarkWord6  ctermbg=Blue     ctermfg=Black  guibg=#9999FF    guifg=Black
+	let l:palette = []
+	if type(g:mwDefaultHighlightingPalette) == type([])
+		" There are custom color definitions, not a named built-in palette.
+		let l:palette = g:mwDefaultHighlightingPalette
+	elseif g:mwDefaultHighlightingPalette ==# 'original'
+		let l:palette = [
+		\   { 'ctermbg':'Cyan',       'ctermfg':'Black', 'guibg':'#8CCBEA', 'guifg':'Black' },
+		\   { 'ctermbg':'Green',      'ctermfg':'Black', 'guibg':'#A4E57E', 'guifg':'Black' },
+		\   { 'ctermbg':'Yellow',     'ctermfg':'Black', 'guibg':'#FFDB72', 'guifg':'Black' },
+		\   { 'ctermbg':'Red',        'ctermfg':'Black', 'guibg':'#FF7272', 'guifg':'Black' },
+		\   { 'ctermbg':'Magenta',    'ctermfg':'Black', 'guibg':'#FFB3FF', 'guifg':'Black' },
+		\   { 'ctermbg':'Blue',       'ctermfg':'Black', 'guibg':'#9999FF', 'guifg':'Black' },
+		\]
+	elseif g:mwDefaultHighlightingPalette ==# 'extended'
+		let l:palette = [
+		\   { 'ctermbg':'Blue',       'ctermfg':'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
+		\   { 'ctermbg':'Magenta',    'ctermfg':'Black', 'guibg':'#FFA1C6', 'guifg':'#80005D' },
+		\   { 'ctermbg':'Green',      'ctermfg':'Black', 'guibg':'#ACFFA1', 'guifg':'#0F8000' },
+		\   { 'ctermbg':'Yellow',     'ctermfg':'Black', 'guibg':'#FFE8A1', 'guifg':'#806000' },
+		\   { 'ctermbg':'DarkCyan',   'ctermfg':'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
+		\   { 'ctermbg':'Cyan',       'ctermfg':'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
+		\   { 'ctermbg':'DarkBlue',   'ctermfg':'Black', 'guibg':'#A1DBFF', 'guifg':'#004E80' },
+		\   { 'ctermbg':'DarkMagenta','ctermfg':'Black', 'guibg':'#A29CCF', 'guifg':'#120080' },
+		\   { 'ctermbg':'DarkRed',    'ctermfg':'Black', 'guibg':'#F5A1FF', 'guifg':'#720080' },
+		\   { 'ctermbg':'Brown',      'ctermfg':'Black', 'guibg':'#FFC4A1', 'guifg':'#803000' },
+		\   { 'ctermbg':'DarkGreen',  'ctermfg':'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
+		\   { 'ctermbg':'Red',        'ctermfg':'Black', 'guibg':'#F3FFA1', 'guifg':'#6F8000' },
+		\   { 'ctermbg':'White',      'ctermfg':'Gray',  'guibg':'#E3E3D2', 'guifg':'#999999' },
+		\   { 'ctermbg':'LightGray',  'ctermfg':'White', 'guibg':'#D3D3C3', 'guifg':'#666666' },
+		\   { 'ctermbg':'Gray',       'ctermfg':'Black', 'guibg':'#A3A396', 'guifg':'#222222' },
+		\   { 'ctermbg':'Black',      'ctermfg':'White', 'guibg':'#53534C', 'guifg':'#DDDDDD' },
+		\   { 'ctermbg':'Black',      'ctermfg':'Gray',  'guibg':'#131311', 'guifg':'#AAAAAA' },
+		\   { 'ctermbg':'Blue',       'ctermfg':'White', 'guibg':'#0000FF', 'guifg':'#F0F0FF' },
+		\   { 'ctermbg':'DarkRed',    'ctermfg':'White', 'guibg':'#FF0000', 'guifg':'#FFFFFF' },
+		\]
+	elseif ! empty(g:mwDefaultHighlightingPalette)
+		let v:warningmsg = 'Mark: Unknown value for g:mwDefaultHighlightingPalette: ' . g:mwDefaultHighlightingPalette
+		echohl WarningMsg
+		echomsg v:warningmsg
+		echohl None
+
+		return
+	endif
+
+	for i in range(1, (g:mwDefaultHighlightingNum == -1 ? len(l:palette) : g:mwDefaultHighlightingNum))
+		execute 'highlight def MarkWord' . i join(map(items(l:palette[i - 1]), 'join(v:val, "=")'))
+	endfor
 endfunction
 call s:DefaultHighlightings()
 autocmd ColorScheme * call <SID>DefaultHighlightings()
@@ -305,4 +359,6 @@ if g:mwAutoLoadMarks
 	augroup END
 endif
 
+let &cpo = s:save_cpo
+unlet s:save_cpo
 " vim: ts=4 sts=0 sw=4 noet

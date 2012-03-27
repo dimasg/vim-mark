@@ -218,16 +218,35 @@ CONFIGURATION						  *mark-configuration*
 
 For a permanent configuration, put the following commands into your |vimrc|.
 
-						       *mark-highlight-colors*
-You may define your own colors or more than the default 6 highlightings in
-your vimrc file (or anywhere before this plugin is sourced), in the following
-form (where N = 1..): >
-    highlight MarkWordN ctermbg=Cyan ctermfg=Black guibg=#8CCBEA guifg=Black
+					 *mark-colors* *mark-highlight-colors*
+This plugin defines 6 mark groups:
+    1: Cyan  2:Green  3:Yellow  4:Red  5:Magenta  6:Blue ~
 Higher numbers always take precedence and are displayed above lower ones.
+
+					      *g:mwDefaultHighlightingPalette*
+Especially if you use GVIM, you can switch to a richer palette of up to 18
+colors: >
+    let g:mwDefaultHighlightingPalette = 'extended'
+<
+If you like the additional colors, but don't need that many of them, restrict
+their number via: >
+	let g:mwDefaultHighlightingNum = 9
+<
+							*mark-colors-redefine*
+If none of the default highlightings suits you, define your own colors in your
+vimrc file (or anywhere before this plugin is sourced), in the following form
+(where N = 1..): >
+    highlight MarkWordN ctermbg=Cyan ctermfg=Black guibg=#8CCBEA guifg=Black
+You can also use this form to redefine only some of the default highlightings.
 If you want to avoid losing the highlightings on |:colorscheme| commands, you
 need to re-apply your highlights on the |ColorScheme| event, similar to how
-this plugin does.
-
+this plugin does. Or you define the palette not via :highlight commands, but
+use the plugin's infrastructure: >
+    let g:mwDefaultHighlightingPalette = [
+    \	{ 'ctermbg':'Cyan', 'ctermfg':'Black', 'guibg':'#8CCBEA', 'guifg':'Black' },
+    \	...
+    \]
+<
 The search type highlighting (in the search message) can be changed via: >
     highlight link SearchSpecialSearchType MoreMsg
 <
@@ -298,6 +317,13 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.6.3	27-Mar-2012
+- ENH: Allow choosing of palette and limiting of default mark highlight groups
+  via g:mwDefaultHighlightingPalette and g:mwDefaultHighlightingNum.
+- ENH: Offer an extended color palette in addition to the original 6-color one.
+  Enable this via :let g:mwDefaultHighlightingPalette = "extended" in your
+  vimrc.
 
 2.6.2	26-Mar-2012
 - ENH: When a [count] exceeding the number of available mark groups is given,
