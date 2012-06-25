@@ -1,4 +1,4 @@
-*mark.txt*              Highlight several words in different colors simultaneously.
+﻿*mark.txt*              Highlight several words in different colors simultaneously.
 
 			    MARK    by Ingo Karkat
 		       (original version by Yuheng Xie)
@@ -263,6 +263,12 @@ To turn off the automatic persistence of marks across Vim sessions: >
     let g:mwAutoSaveMarks = 0
 You can still explicitly save marks via |:MarkSave|.
 
+							      *g:mwIgnoreCase*
+If you have set 'ignorecase', but want marks to be case-insensitive, you can
+override the default behavior of using 'ignorecase' by setting: >
+	let g:mwIgnoreCase = 0
+<
+
 							       *mark-mappings*
 You can use different mappings by mapping to the <Plug>Mark... mappings (use
 ":map <Plug>Mark" to list them all) before this plugin is sourced.
@@ -317,6 +323,10 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.6.4	23-Apr-2012
+- Allow to override 'ignorecase' setting via g:mwIgnoreCase. Thanks to fanhe
+  for the idea and sending a patch.
 
 2.6.3	27-Mar-2012
 - ENH: Allow choosing of palette and limiting of default mark highlight groups

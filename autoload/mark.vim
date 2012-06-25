@@ -1,4 +1,4 @@
-" Script Name: mark.vim
+﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
 " Copyright:   (C) 2005-2008 by Yuheng Xie
@@ -10,8 +10,13 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.6.2
+" Version:     2.6.4
 " Changes:
+" 23-Apr-2012, Ingo Karkat + fanhe
+" - Force case via \c / \C instead of temporarily unsetting 'smartcase'.
+" - Allow to override 'ignorecase' setting via g:mwIgnoreCase. Thanks to fanhe
+"   for the idea and sending a patch.
+"
 " 26-Mar-2012, Ingo Karkat
 " - ENH: When a [count] exceeding the number of available mark groups is given,
 "   a summary of marks is given and the user is asked to select a mark group.
@@ -215,6 +220,9 @@ endif
 function! s:EscapeText( text )
 	return substitute( escape(a:text, '\' . '^$.*[~'), "\n", '\\n', 'ge' )
 endfunction
+function! s:IsIgnoreCase( expr )
+	return ((exists('g:mwIgnoreCase') ? g:mwIgnoreCase : &ignorecase) && a:expr !~# '\\\@<!\\C')
+endfunction
 " Mark the current word, like the built-in star command.
 " If the cursor is on an existing mark, remove it.
 function! mark#MarkCurrentWord( groupNum )
@@ -300,7 +308,7 @@ function! s:MarkMatch( indices, expr )
 		" 'ignorecase' and 'smartcase' settings.
 		" Make the match according to the 'ignorecase' setting, like the star command.
 		" (But honor an explicit case-sensitive regexp via the /\C/ atom.)
-		let l:expr = ((&ignorecase && a:expr !~# '\\\@<!\\C') ? '\c' . a:expr : a:expr)
+		let l:expr = (s:IsIgnoreCase(a:expr) ? '\c' : '') . a:expr
 
 		" To avoid an arbitrary ordering of highlightings, we assign a different
 		" priority based on the highlight group, and ensure that the highest
@@ -561,11 +569,12 @@ function! mark#CurrentMark()
 	let i = s:markNum - 1
 	while i >= 0
 		if ! empty(s:pattern[i])
+			let matchPattern = (s:IsIgnoreCase(s:pattern[i]) ? '\c' : '\C') . s:pattern[i]
 			" Note: col() is 1-based, all other indexes zero-based!
 			let start = 0
 			while start >= 0 && start < strlen(line) && start < col('.')
-				let b = match(line, s:pattern[i], start)
-				let e = matchend(line, s:pattern[i], start)
+				let b = match(line, matchPattern, start)
+				let e = matchend(line, matchPattern, start)
 				if b < col('.') && col('.') <= e
 					return [s:pattern[i], [line('.'), (b + 1)], i]
 				endif
@@ -617,8 +626,9 @@ function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
 	" result from the *-command-alike mappings should not obey 'smartcase' (like
 	" the * command itself), anyway. If the :Mark command wants to support
 	" 'smartcase', it'd have to emulate that into the regular expression.
-	let l:save_smartcase = &smartcase
-	set nosmartcase
+	" Instead of temporarily unsetting 'smartcase', we force the correct
+	" case-matching behavior through \c / \C.
+	let l:searchPattern = (s:IsIgnoreCase(a:pattern) ? '\c' : '\C') . a:pattern
 
 	let l:count = v:count1
 	let l:isWrapped = 0
@@ -628,7 +638,7 @@ function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
 		let [l:prevLine, l:prevCol] = [line('.'), col('.')]
 
 		" Search for next match, 'wrapscan' applies.
-		let [l:line, l:col] = searchpos( a:pattern, (a:isBackward ? 'b' : '') )
+		let [l:line, l:col] = searchpos( l:searchPattern, (a:isBackward ? 'b' : '') )
 
 "****D echomsg '****' a:isBackward string([l:line, l:col]) string(a:currentMarkPosition) l:count
 		if a:isBackward && l:line > 0 && [l:line, l:col] == a:currentMarkPosition && l:count == v:count1
@@ -674,7 +684,6 @@ function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
 			break
 		endif
 	endwhile
-	let &smartcase = l:save_smartcase
 
 	" We're not stuck when the search wrapped around and landed on the current
 	" mark; that's why we exclude a possible wrap-around via v:count1 == 1.
