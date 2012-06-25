@@ -13,8 +13,12 @@
 "  - Requires Vim 7.1 with "matchadd()", or Vim 7.2 or higher.
 "  - mark.vim autoload script.
 "
-" Version:     2.6.3
+" Version:     2.6.5
 " Changes:
+" 24-Jun-2012, Ingo Karkat
+" - Don't define the default <Leader>m and <Leader>r mappings in select mode,
+"   just visual mode. Thanks to rockybalboa4 for pointing this out.
+"
 " 27-Mar-2012, Ingo Karkat
 " - ENH: Allow choosing of palette and limiting of default mark highlight groups
 "   via g:mwDefaultHighlightingPalette and g:mwDefaultHighlightingNum.
@@ -285,13 +289,13 @@ if !hasmapto('<Plug>MarkSet', 'n')
 	nmap <unique> <silent> <Leader>m <Plug>MarkSet
 endif
 if !hasmapto('<Plug>MarkSet', 'v')
-	vmap <unique> <silent> <Leader>m <Plug>MarkSet
+	xmap <unique> <silent> <Leader>m <Plug>MarkSet
 endif
 if !hasmapto('<Plug>MarkRegex', 'n')
 	nmap <unique> <silent> <Leader>r <Plug>MarkRegex
 endif
 if !hasmapto('<Plug>MarkRegex', 'v')
-	vmap <unique> <silent> <Leader>r <Plug>MarkRegex
+	xmap <unique> <silent> <Leader>r <Plug>MarkRegex
 endif
 if !hasmapto('<Plug>MarkClear', 'n')
 	nmap <unique> <silent> <Leader>n <Plug>MarkClear
