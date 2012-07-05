@@ -198,6 +198,21 @@ highlight group via [N].
 			The last mark used for a search (via |<Leader>*|) is
 			shown with a "/".
 
+MARK HIGHLIGHTING PALETTES					*mark-palette*
+
+The plugin comes with three predefined palettes: original, extended, and
+maximum. You can dynamically toggle between them, e.g. when you need more
+marks or a different set of colors.
+								*:MarkPalette*
+:MarkPalette {palette}	Highlight existing and future marks with the colors
+			defined in {palette}. If the new palette contains less
+			mark groups than the current one, the additional marks
+			are lost.
+			You can use |:command-completion| for {palette}.
+
+See |g:mwDefaultHighlightingPalette| for how to change the default palette,
+and |mark-palette-define| for how to add your own custom palettes.
+
 ==============================================================================
 INSTALLATION						   *mark-installation*
 
@@ -227,6 +242,9 @@ Higher numbers always take precedence and are displayed above lower ones.
 Especially if you use GVIM, you can switch to a richer palette of up to 18
 colors: >
     let g:mwDefaultHighlightingPalette = 'extended'
+Or, if you have both good eyes and display, you can try a palette that defines
+27, 58, or even 77 colors, depending on the number of available colors: >
+    let g:mwDefaultHighlightingPalette = 'maximum'
 <
 If you like the additional colors, but don't need that many of them, restrict
 their number via: >
@@ -246,7 +264,19 @@ use the plugin's infrastructure: >
     \	{ 'ctermbg':'Cyan', 'ctermfg':'Black', 'guibg':'#8CCBEA', 'guifg':'Black' },
     \	...
     \]
-<
+<							 *mark-palette-define*
+If you want to switch multiple palettes during runtime, you need to define
+them as proper palettes: >
+    let g:mwPalettes['mypalette'] = [
+    \	{ 'ctermbg':'Cyan', 'ctermfg':'Black', 'guibg':'#8CCBEA', 'guifg':'Black' },
+    \	...
+    \]
+    let g:mwPalettes['other'] = [ ... ]
+    let g:mwDefaultHighlightingPalette = 'mypalette'
+To add your palette to the existing ones, do this after the default palette
+has been defined, e.g. in .vim/after/plugin/mark.vim). Alternatively, you can
+also completely redefine all available palettes in .vimrc.
+
 The search type highlighting (in the search message) can be changed via: >
     highlight link SearchSpecialSearchType MoreMsg
 <
@@ -323,6 +353,11 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.7.0	04-Jul-2012
+- ENH: Implement :MarkPalette command to switch mark highlighting on-the-fly
+  during runtime.
+- Add "maximum" palette contributed by rockybalboa4.
 
 2.6.5	24-Jun-2012
 - Don't define the default <Leader>m and <Leader>r mappings in select mode,

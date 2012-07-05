@@ -11,10 +11,22 @@
 "
 " Dependencies:
 "  - Requires Vim 7.1 with "matchadd()", or Vim 7.2 or higher.
-"  - mark.vim autoload script.
+"  - mark.vim autoload script
+"  - mark/palettes.vim autoload script for additional palettes
 "
-" Version:     2.6.5
+" Version:     2.7.0
 " Changes:
+" 04-Jul-2012, Ingo Karkat
+" - Introduce g:mwPalettes instead of hard-coding them in
+"   s:DefaultHighlightings(), which got s:DefineHighlightings() extracted and
+"   the rest renamed to s:GetPalette().
+" - Allow overriding of existing mark highlighting via a:isOverride argument to
+"   s:DefineHighlightings().
+" - Add "maximum" palette contributed by rockybalboa4 and move it and the
+"   "extended" palette to a separate mark/palettes.vim autoload script.
+" - ENH: Implement :MarkPalette command to switch mark highlighting on-the-fly
+"   during runtime.
+"
 " 24-Jun-2012, Ingo Karkat
 " - Don't define the default <Leader>m and <Leader>r mappings in select mode,
 "   just visual mode. Thanks to rockybalboa4 for pointing this out.
@@ -187,6 +199,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 "- configuration --------------------------------------------------------------
+
 if ! exists('g:mwHistAdd')
 	let g:mwHistAdd = '/@'
 endif
@@ -205,60 +218,64 @@ endif
 if ! exists('g:mwDefaultHighlightingPalette')
 	let g:mwDefaultHighlightingPalette = 'original'
 endif
-
-
-"- default highlightings ------------------------------------------------------
-function! s:DefaultHighlightings()
-	let l:palette = []
-	if type(g:mwDefaultHighlightingPalette) == type([])
-		" There are custom color definitions, not a named built-in palette.
-		let l:palette = g:mwDefaultHighlightingPalette
-	elseif g:mwDefaultHighlightingPalette ==# 'original'
-		let l:palette = [
+if ! exists('g:mwPalettes')
+	let g:mwPalettes = {
+	\	'original': [
 		\   { 'ctermbg':'Cyan',       'ctermfg':'Black', 'guibg':'#8CCBEA', 'guifg':'Black' },
 		\   { 'ctermbg':'Green',      'ctermfg':'Black', 'guibg':'#A4E57E', 'guifg':'Black' },
 		\   { 'ctermbg':'Yellow',     'ctermfg':'Black', 'guibg':'#FFDB72', 'guifg':'Black' },
 		\   { 'ctermbg':'Red',        'ctermfg':'Black', 'guibg':'#FF7272', 'guifg':'Black' },
 		\   { 'ctermbg':'Magenta',    'ctermfg':'Black', 'guibg':'#FFB3FF', 'guifg':'Black' },
 		\   { 'ctermbg':'Blue',       'ctermfg':'Black', 'guibg':'#9999FF', 'guifg':'Black' },
-		\]
-	elseif g:mwDefaultHighlightingPalette ==# 'extended'
-		let l:palette = [
-		\   { 'ctermbg':'Blue',       'ctermfg':'Black', 'guibg':'#A1B7FF', 'guifg':'#001E80' },
-		\   { 'ctermbg':'Magenta',    'ctermfg':'Black', 'guibg':'#FFA1C6', 'guifg':'#80005D' },
-		\   { 'ctermbg':'Green',      'ctermfg':'Black', 'guibg':'#ACFFA1', 'guifg':'#0F8000' },
-		\   { 'ctermbg':'Yellow',     'ctermfg':'Black', 'guibg':'#FFE8A1', 'guifg':'#806000' },
-		\   { 'ctermbg':'DarkCyan',   'ctermfg':'Black', 'guibg':'#D2A1FF', 'guifg':'#420080' },
-		\   { 'ctermbg':'Cyan',       'ctermfg':'Black', 'guibg':'#A1FEFF', 'guifg':'#007F80' },
-		\   { 'ctermbg':'DarkBlue',   'ctermfg':'Black', 'guibg':'#A1DBFF', 'guifg':'#004E80' },
-		\   { 'ctermbg':'DarkMagenta','ctermfg':'Black', 'guibg':'#A29CCF', 'guifg':'#120080' },
-		\   { 'ctermbg':'DarkRed',    'ctermfg':'Black', 'guibg':'#F5A1FF', 'guifg':'#720080' },
-		\   { 'ctermbg':'Brown',      'ctermfg':'Black', 'guibg':'#FFC4A1', 'guifg':'#803000' },
-		\   { 'ctermbg':'DarkGreen',  'ctermfg':'Black', 'guibg':'#D0FFA1', 'guifg':'#3F8000' },
-		\   { 'ctermbg':'Red',        'ctermfg':'Black', 'guibg':'#F3FFA1', 'guifg':'#6F8000' },
-		\   { 'ctermbg':'White',      'ctermfg':'Gray',  'guibg':'#E3E3D2', 'guifg':'#999999' },
-		\   { 'ctermbg':'LightGray',  'ctermfg':'White', 'guibg':'#D3D3C3', 'guifg':'#666666' },
-		\   { 'ctermbg':'Gray',       'ctermfg':'Black', 'guibg':'#A3A396', 'guifg':'#222222' },
-		\   { 'ctermbg':'Black',      'ctermfg':'White', 'guibg':'#53534C', 'guifg':'#DDDDDD' },
-		\   { 'ctermbg':'Black',      'ctermfg':'Gray',  'guibg':'#131311', 'guifg':'#AAAAAA' },
-		\   { 'ctermbg':'Blue',       'ctermfg':'White', 'guibg':'#0000FF', 'guifg':'#F0F0FF' },
-		\   { 'ctermbg':'DarkRed',    'ctermfg':'White', 'guibg':'#FF0000', 'guifg':'#FFFFFF' },
-		\]
-	elseif ! empty(g:mwDefaultHighlightingPalette)
-		let v:warningmsg = 'Mark: Unknown value for g:mwDefaultHighlightingPalette: ' . g:mwDefaultHighlightingPalette
-		echohl WarningMsg
-		echomsg v:warningmsg
-		echohl None
+		\],
+	\	'extended': function('mark#palettes#Extended'),
+	\	'maximum': function('mark#palettes#Maximum')
+	\}
+endif
 
-		return
+
+
+"- default highlightings ------------------------------------------------------
+
+function! s:GetPalette()
+	let l:palette = []
+	if type(g:mwDefaultHighlightingPalette) == type([])
+		" There are custom color definitions, not a named built-in palette.
+		return g:mwDefaultHighlightingPalette
+	endif
+	if ! has_key(g:mwPalettes, g:mwDefaultHighlightingPalette)
+		if ! empty(g:mwDefaultHighlightingPalette)
+			let v:warningmsg = 'Mark: Unknown value for g:mwDefaultHighlightingPalette: ' . g:mwDefaultHighlightingPalette
+			echohl WarningMsg
+			echomsg v:warningmsg
+			echohl None
+		endif
+
+		return []
 	endif
 
-	for i in range(1, (g:mwDefaultHighlightingNum == -1 ? len(l:palette) : g:mwDefaultHighlightingNum))
-		execute 'highlight def MarkWord' . i join(map(items(l:palette[i - 1]), 'join(v:val, "=")'))
-	endfor
+	if type(g:mwPalettes[g:mwDefaultHighlightingPalette]) == type([])
+		return g:mwPalettes[g:mwDefaultHighlightingPalette]
+	elseif type(g:mwPalettes[g:mwDefaultHighlightingPalette]) == type(function('tr'))
+		return call(g:mwPalettes[g:mwDefaultHighlightingPalette], [])
+	else
+		let v:errmsg = printf('Mark: Invalid value type for g:mwPalettes[%s]', g:mwDefaultHighlightingPalette)
+		echohl ErrorMsg
+		echomsg v:errmsg
+		echohl None
+		return []
+	endif
 endfunction
-call s:DefaultHighlightings()
-autocmd ColorScheme * call <SID>DefaultHighlightings()
+function! s:DefineHighlightings( palette, isOverride )
+	let l:command = (a:isOverride ? 'highlight' : 'highlight def')
+	let l:highlightingNum = (g:mwDefaultHighlightingNum == -1 ? len(a:palette) : g:mwDefaultHighlightingNum)
+	for i in range(1, l:highlightingNum)
+		execute l:command 'MarkWord' . i join(map(items(a:palette[i - 1]), 'join(v:val, "=")'))
+	endfor
+	return l:highlightingNum
+endfunction
+call s:DefineHighlightings(s:GetPalette(), 0)
+autocmd ColorScheme * call <SID>DefineHighlightings(<SID>GetPalette(), 0)
 
 " Default highlighting for the special search type.
 " You can override this by defining / linking the 'SearchSpecialSearchType'
@@ -266,7 +283,9 @@ autocmd ColorScheme * call <SID>DefaultHighlightings()
 highlight def link SearchSpecialSearchType MoreMsg
 
 
+
 "- mappings -------------------------------------------------------------------
+
 nnoremap <silent> <Plug>MarkSet      :<C-u>if !mark#MarkCurrentWord(v:count)<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 vnoremap <silent> <Plug>MarkSet      :<C-u>if !mark#DoMark(v:count, mark#GetVisualSelectionAsLiteralPattern())<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkRegex    :<C-u>call mark#MarkRegex('')<CR>
@@ -323,16 +342,40 @@ if !hasmapto('<Plug>MarkSearchPrev', 'n')
 endif
 
 
+
 "- commands -------------------------------------------------------------------
+
 command! -count -nargs=? Mark if !mark#DoMark(<count>, <f-args>) | echoerr printf('Only %d mark highlight groups', mark#GetGroupNum()) | endif
 command! -bar MarkClear call mark#ClearAll()
 command! -bar Marks call mark#List()
 
 command! -bar MarkLoad call mark#LoadCommand(1)
 command! -bar MarkSave call mark#SaveCommand()
+function! s:SetPalette( paletteName )
+	if type(g:mwDefaultHighlightingPalette) == type([])
+		" Convert the directly defined list to a palette named "default".
+		let g:mwPalettes['default'] = g:mwDefaultHighlightingPalette
+		unlet! g:mwDefaultHighlightingPalette   " Avoid E706.
+	endif
+	let g:mwDefaultHighlightingPalette = a:paletteName
+
+	let l:palette = s:GetPalette()
+	if empty(l:palette)
+		return
+	endif
+
+	call mark#ReInit(s:DefineHighlightings(l:palette, 1))
+	call mark#UpdateScope()
+endfunction
+function! s:MarkPaletteComplete( ArgLead, CmdLine, CursorPos )
+	return sort(filter(keys(g:mwPalettes), 'v:val =~ ''\V\^'' . escape(a:ArgLead, "\\")'))
+endfunction
+command! -bar -nargs=1 -complete=customlist,<SID>MarkPaletteComplete MarkPalette call <SID>SetPalette(<q-args>)
+
 
 
 "- marks persistence ----------------------------------------------------------
+
 if g:mwAutoLoadMarks
 	" As the viminfo is only processed after sourcing of the runtime files, the
 	" persistent global variables are not yet available here. Defer this until Vim

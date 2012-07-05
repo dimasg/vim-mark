@@ -10,8 +10,13 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.6.4
+" Version:     2.7.0
 " Changes:
+" 04-Jul-2012, Ingo Karkat
+" - ENH: Handle on-the-fly change of mark highlighting via mark#ReInit(), which
+"   truncates / expands s:pattern and corrects the indices. Also, w:mwMatch List
+"   size mismatches must be handled in s:MarkMatch().
+"
 " 23-Apr-2012, Ingo Karkat + fanhe
 " - Force case via \c / \C instead of temporarily unsetting 'smartcase'.
 " - Allow to override 'ignorecase' setting via g:mwIgnoreCase. Thanks to fanhe
@@ -292,6 +297,18 @@ endfunction
 function! s:MarkMatch( indices, expr )
 	if ! exists('w:mwMatch')
 		let w:mwMatch = repeat([0], s:markNum)
+	elseif len(w:mwMatch) != s:markNum
+		" The number of marks has changed.
+		if len(w:mwMatch) > s:markNum
+			" Truncate the matches.
+			for l:match in filter(w:mwMatch[s:markNum : ], 'v:val > 0')
+				silent! call matchdelete(l:match)
+			endfor
+			let w:mwMatch = w:mwMatch[0 : (s:markNum - 1)]
+		else
+			" Expand the matches.
+			let w:mwMatch += repeat([0], (s:markNum - len(w:mwMatch)))
+		endif
 	endif
 
 	for l:index in a:indices
@@ -952,6 +969,26 @@ function! mark#Init()
 	let s:cycle = 0
 	let s:lastSearch = -1
 	let s:enabled = 1
+endfunction
+function! mark#ReInit( newMarkNum )
+	if a:newMarkNum < s:markNum " There are less marks than before.
+		" Clear the additional highlight groups.
+		for i in range(a:newMarkNum + 1, s:markNum)
+			execute 'highlight clear MarkWord' . (i + 1)
+		endfor
+
+		" Truncate the mark patterns.
+		let s:pattern = s:pattern[0 : (a:newMarkNum - 1)]
+
+		" Correct any indices.
+		let s:cycle = min([s:cycle, (a:newMarkNum - 1)])
+		let s:lastSearch = (s:lastSearch < a:newMarkNum ? s:lastSearch : -1)
+	elseif a:newMarkNum > s:markNum " There are more marks than before.
+		" Expand the mark patterns.
+		let s:pattern += repeat([''], (a:newMarkNum - s:markNum))
+	endif
+
+	let s:markNum = a:newMarkNum
 endfunction
 
 call mark#Init()
