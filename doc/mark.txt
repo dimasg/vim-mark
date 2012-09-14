@@ -1,4 +1,4 @@
-﻿*mark.txt*              Highlight several words in different colors simultaneously.
+*mark.txt*              Highlight several words in different colors simultaneously.
 
 			    MARK    by Ingo Karkat
 		       (original version by Yuheng Xie)
@@ -21,10 +21,9 @@ highlighting of search results and the * |star| command. For example, when you
 are browsing a big program file, you could highlight multiple identifiers in
 parallel. This will make it easier to trace the source code.
 
-This is a continuation of vimscript #1238 by Yuheng Xie, who apparently
-doesn't maintain his original version anymore and cannot be reached via the
-email address in his profile. This plugin offers the following advantages over
-the original:
+This is a continuation of vimscript #1238 by Yuheng Xie, who doesn't maintain
+his original version anymore and recommends switching to this fork. This
+plugin offers the following advantages over the original:
 - Much faster, all colored words can now be highlighted, no more clashes with
   syntax highlighting (due to use of matchadd()).
 - Many bug fixes.
@@ -216,17 +215,17 @@ and |mark-palette-define| for how to add your own custom palettes.
 ==============================================================================
 INSTALLATION						   *mark-installation*
 
-This script is packaged as a|vimball|. If you have the "gunzip" decompressor
-in your PATH, simply edit the *.vba.gz package in Vim; otherwise, decompress
+This script is packaged as a |vimball|. If you have the "gunzip" decompressor
+in your PATH, simply edit the *.vmb.gz package in Vim; otherwise, decompress
 the archive first, e.g. using WinZip. Inside Vim, install by sourcing the
 vimball or via the |:UseVimball| command. >
-    vim mark.vba.gz
+    vim mark*.vmb.gz
     :so %
 To uninstall, use the |:RmVimball| command.
 
 DEPENDENCIES						   *mark-dependencies*
 
-- Requires Vim 7.1 with "matchadd()", or Vim 7.2 or higher.
+- Requires Vim 7.1 with |matchadd()|, or Vim 7.2 or higher.
 
 ==============================================================================
 CONFIGURATION						  *mark-configuration*
@@ -312,6 +311,12 @@ To remove the default overriding of * and #, use: >
     nmap <Plug>IgnoreMarkSearchNext <Plug>MarkSearchNext
     nmap <Plug>IgnoreMarkSearchPrev <Plug>MarkSearchPrev
 <
+If you don't want the * and # mappings remember the last search type and
+instead always search for the next occurrence of the current mark, with a
+fallback to Vim's original * command, use: >
+    nmap * <Plug>MarkSearchOrCurNext
+    nmap # <Plug>MarkSearchOrCurPrev
+<
 						 *mark-whitespace-indifferent*
 Some people like to create a mark based on the visual selection, like
 |v_<Leader>m|, but have whitespace in the selection match any whitespace when
@@ -353,6 +358,12 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.7.1	14-Sep-2012
+- Enable alternative * / # mappings that do not remember the last search type
+  through new <Plug>MarkSearchOrCurNext, <Plug>MarkSearchOrCurPrev,
+  <Plug>MarkSearchOrAnyNext, <Plug>MarkSearchOrAnyPrev mappings. Based on an
+  inquiry from Kevin Huanpeng Du.
 
 2.7.0	04-Jul-2012
 - ENH: Implement :MarkPalette command to switch mark highlighting on-the-fly
@@ -558,7 +569,7 @@ Initial version published by Yuheng Xie on vim.org.
 ==============================================================================
 Copyright: (C) 2005-2008 Yuheng Xie
            (C) 2008-2012 Ingo Karkat
-The VIM LICENSE applies to this script; see|copyright|.
+The VIM LICENSE applies to this script; see |copyright|.
 
 Maintainer:	Ingo Karkat <ingo@karkat.de>
 ==============================================================================

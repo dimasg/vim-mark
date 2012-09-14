@@ -1,4 +1,4 @@
-﻿" Script Name: mark.vim
+" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
 " Copyright:   (C) 2005-2008 by Yuheng Xie
@@ -10,8 +10,12 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.7.0
+" Version:     2.7.1
 " Changes:
+" 13-Sep-2012, Ingo Karkat
+" - Enable alternative * / # mappings that do not remember the last search type
+"   by adding optional search function argument to mark#SearchNext().
+"
 " 04-Jul-2012, Ingo Karkat
 " - ENH: Handle on-the-fly change of mark highlighting via mark#ReInit(), which
 "   truncates / expands s:pattern and corrects the indices. Also, w:mwMatch List
@@ -771,18 +775,16 @@ function! mark#SearchAnyMark( isBackward )
 endfunction
 
 " Search last searched mark.
-function! mark#SearchNext( isBackward )
+function! mark#SearchNext( isBackward, ... )
 	let l:markText = mark#CurrentMark()[0]
 	if empty(l:markText)
-		return 0
-	else
-		if s:lastSearch == -1
-			call mark#SearchAnyMark(a:isBackward)
-		else
-			call mark#SearchCurrentMark(a:isBackward)
-		endif
-		return 1
+		return 0    " Fall back to the built-in * / # command (done by the mapping).
 	endif
+
+	" Use the provided search type or choose depending on last use of
+	" <Plug>MarkSearchCurrentNext / <Plug>MarkSearchAnyNext.
+	call call(a:0 ? a:1 : (s:lastSearch == -1 ? 'mark#SearchAnyMark' : 'mark#SearchCurrentMark'), [a:isBackward])
+	return 1
 endfunction
 
 " Load mark patterns from list.
@@ -809,12 +811,12 @@ function! mark#ToPatternList()
 	" may differ on the next invocation (e.g. due to a different number of
 	" highlight groups in Vim and GVIM). We want to keep empty patterns in the
 	" front and middle to maintain the mapping to highlight groups, though.
-	let l:highestNonEmptyIndex = s:markNum -1
+	let l:highestNonEmptyIndex = s:markNum - 1
 	while l:highestNonEmptyIndex >= 0 && empty(s:pattern[l:highestNonEmptyIndex])
 		let l:highestNonEmptyIndex -= 1
 	endwhile
 
-	return (l:highestNonEmptyIndex < 0 ? [] : s:pattern[0:l:highestNonEmptyIndex])
+	return (l:highestNonEmptyIndex < 0 ? [] : s:pattern[0 : l:highestNonEmptyIndex])
 endfunction
 
 " :MarkLoad command.

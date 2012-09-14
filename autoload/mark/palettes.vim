@@ -1,4 +1,4 @@
-﻿" mark/palettes.vim: Additional palettes for mark highlighting.
+" mark/palettes.vim: Additional palettes for mark highlighting.
 "
 " DEPENDENCIES:
 "
