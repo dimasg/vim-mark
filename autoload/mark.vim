@@ -1,4 +1,4 @@
-" Script Name: mark.vim
+﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
 " Copyright:   (C) 2005-2008 by Yuheng Xie
@@ -10,8 +10,14 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.7.1
+" Version:     2.7.2
 " Changes:
+" 15-Oct-2012, Ingo Karkat
+" - Issue an error message "No marks defined" instead of moving the cursor by
+"   one character when there are no marks (e.g. initially or after :MarkClear).
+" - Enable custom integrations via new mark#GetNum() and mark#GetPattern()
+"   functions.
+"
 " 13-Sep-2012, Ingo Karkat
 " - Enable alternative * / # mappings that do not remember the last search type
 "   by adding optional search function argument to mark#SearchNext().
@@ -626,19 +632,31 @@ function! mark#SearchCurrentMark( isBackward )
 	endif
 endfunction
 
-function! s:ErrorMessage( searchType, searchPattern, isBackward )
-	if &wrapscan
-		let v:errmsg = a:searchType . ' not found: ' . a:searchPattern
-	else
-		let v:errmsg = printf('%s search hit %s without match for: %s', a:searchType, (a:isBackward ? 'TOP' : 'BOTTOM'), a:searchPattern)
-	endif
+function! s:ErrorMsg( text )
+	let v:errmsg = a:text
 	echohl ErrorMsg
 	echomsg v:errmsg
 	echohl None
 endfunction
+function! s:NoMarkErrorMessage()
+	call s:ErrorMsg('No marks defined')
+endfunction
+function! s:ErrorMessage( searchType, searchPattern, isBackward )
+	if &wrapscan
+		let l:errmsg = a:searchType . ' not found: ' . a:searchPattern
+	else
+		let l:errmsg = printf('%s search hit %s without match for: %s', a:searchType, (a:isBackward ? 'TOP' : 'BOTTOM'), a:searchPattern)
+	endif
+	call s:ErrorMsg(l:errmsg)
+endfunction
 
 " Wrapper around search() with additonal search and error messages and "wrapscan" warning.
 function! s:Search( pattern, isBackward, currentMarkPosition, searchType )
+	if empty(a:pattern)
+		call s:NoMarkErrorMessage()
+		return 0
+	endif
+
 	let l:save_view = winsaveview()
 
 	" searchpos() obeys the 'smartcase' setting; however, this setting doesn't
@@ -951,6 +969,23 @@ endfunction
 
 function! mark#GetGroupNum()
 	return s:markNum
+endfunction
+
+
+"- integrations ----------------------------------------------------------------
+
+" Access the number of possible marks.
+function! mark#GetNum()
+	return s:markNum
+endfunction
+
+" Access the current / passed index pattern.
+function! mark#GetPattern( ... )
+	if a:0
+		return s:pattern[a:1]
+	else
+		return (s:lastSearch == -1 ? '' : s:pattern[s:lastSearch])
+	endif
 endfunction
 
 

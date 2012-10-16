@@ -1,4 +1,4 @@
-*mark.txt*              Highlight several words in different colors simultaneously.
+﻿*mark.txt*              Highlight several words in different colors simultaneously.
 
 			    MARK    by Ingo Karkat
 		       (original version by Yuheng Xie)
@@ -7,6 +7,7 @@ description			|mark-description|
 usage				|mark-usage|
 installation			|mark-installation|
 configuration			|mark-configuration|
+integration			|mark-integration|
 limitations			|mark-limitations|
 known problems			|mark-known-problems|
 todo				|mark-todo|
@@ -337,6 +338,14 @@ behavior: >
     vmap <Leader>m <Plug>MarkWhitespaceIndifferent
 <
 ==============================================================================
+INTEGRATION						    *mark-integration*
+
+The following functions offer (read-only) access to the number of marks and
+individual patterns:
+- mark#GetNum()
+- mark#GetPattern([{index}])
+
+==============================================================================
 LIMITATIONS						    *mark-limitations*
 
 - If the 'ignorecase' setting is changed, there will be discrepancies between
@@ -358,6 +367,12 @@ http://vim.wikia.com/wiki/Highlight_multiple_words:
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.7.2	15-Oct-2012
+- Issue an error message "No marks defined" instead of moving the cursor by
+  one character when there are no marks (e.g. initially or after :MarkClear).
+- Enable custom integrations via new mark#GetNum() and mark#GetPattern()
+  functions.
 
 2.7.1	14-Sep-2012
 - Enable alternative * / # mappings that do not remember the last search type
