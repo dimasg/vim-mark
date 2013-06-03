@@ -47,6 +47,9 @@ RELATED WORKS								     *
 - quickhl.vim (vimscript #3692) can also list the matches with colors and in
   addition offers on-the-fly highlighting of the current word (like many IDEs
   do).
+- Highlight (http://www.drchip.org/astronaut/vim/index.html#HIGHLIGHT) has
+  commands and mappings for highlighting and searching, uses matchadd(), but
+  limits the scope of highlightings to the current window.
 
 ==============================================================================
 USAGE								  *mark-usage*
@@ -79,8 +82,8 @@ HIGHLIGHTING						   *mark-highlighting*
 {Visual}[N]<Leader>m	Ditto, based on the visual selection.
 
 						     *<Leader>r* *v_<Leader>r*
-<Leader>r		Manually input a regular expression to mark.
-{Visual}<Leader>r	Ditto, based on the visual selection.
+[N]<Leader>r		Manually input a regular expression to mark.
+{Visual}[N]<Leader>r	Ditto, based on the visual selection.
 
 			In accordance with the built-in |star| command,
 			all these mappings use 'ignorecase', but not
@@ -151,18 +154,42 @@ SEARCHING						      *mark-searching*
 			You can use Vim's |jumplist| to go back to previous
 			mark matches and the position before a mark search.
 
+						       *mark-keypad-searching*
+If you work with multiple highlight groups and assign special meaning to them
+(e.g. group 1 for notable functions, 2 for variables, 3 for includes), you can
+use the 1-9 keys on the numerical keypad to jump to occurrences of a
+particular highlight group. With the general * and # commands above, you'd
+first need to locate a nearby occurrence of the desired highlight group if
+it's not the last mark used.
+							       *<k1>* *<C-k1>*
+<k1> .. <k9>		Jump to the [count]'th next occurrence of the mark
+			belonging to highlight group 1..9.
+<C-k1> .. <C-k9>	Jump to the [count]'th previous occurrence of the mark
+			belonging to highlight group 1..9.
+			Note that these commands only work when the "Num Lock"
+			indicator of your keyboard is ON; otherwise, the
+			keypad is used for cursor movement.
+
 MARK PERSISTENCE					    *mark-persistence*
 
 The marks can be kept and restored across Vim sessions, using the |viminfo|
 file. For this to work, the "!" flag must be part of the 'viminfo' setting: >
     set viminfo+=!  " Save and restore global variables.
 <								   *:MarkLoad*
-:MarkLoad		Restore the marks from the previous Vim session. All
+:MarkLoad 		Restore the marks from the previous Vim session. All
+			current marks are discarded.
+:MarkLoad {slot}	Restore the marks stored in the named {slot}. All
 			current marks are discarded.
 								   *:MarkSave*
 :MarkSave		Save the currently defined marks (or clear the
 			persisted marks if no marks are currently defined) for
 			use in a future Vim session.
+:MarkSave {slot}	Save the currently defined marks in the named {slot}.
+			If {slot} is all UPPERCASE, the marks are persisted
+			and can be |:MarkLoad|ed in a future Vim session;
+			otherwise, you can just recall within the current
+			session. When no marks are currently defined, the
+			{slot} is cleared.
 
 By default, automatic persistence is enabled (so you don't need to explicitly
 |:MarkSave|), but you have to explicitly load the persisted marks in a new Vim
@@ -318,6 +345,24 @@ fallback to Vim's original * command, use: >
     nmap * <Plug>MarkSearchOrCurNext
     nmap # <Plug>MarkSearchOrCurPrev
 <
+The search mappings (*, #, etc.) interpret [count] as the number of
+occurrences to jump over. If you don't want to use the separate
+|mark-keypad-searching| mappings, and rather want [count] select the highlight
+group to target (and you can live with jumps restricted to the very next
+match), (re-)define to these mapping targets: >
+    nmap * <Plug>MarkSearchGroupNext
+    nmap # <Plug>MarkSearchGroupPrev
+<
+You can remap the direct group searches (by default via the keypad 1-9 keys): >
+    nmap <Leader>1  <Plug>MarkSearchGroup1Next
+    nmap <Leader>!  <Plug>MarkSearchGroup1Prev
+<					       *g:mwDirectGroupJumpMappingNum*
+If you need more / less groups, this can be configured via: >
+    let g:mwDirectGroupJumpMappingNum = 20
+Set to 0 to completely turn off the keypad mappings. This is easier than
+remapping all <Plug>-mappings.
+
+
 						 *mark-whitespace-indifferent*
 Some people like to create a mark based on the visual selection, like
 |v_<Leader>m|, but have whitespace in the selection match any whitespace when
@@ -361,12 +406,25 @@ TODO								   *mark-todo*
 
 IDEAS								  *mark-ideas*
 
-Taken from an alternative implementation at
-http://vim.wikia.com/wiki/Highlight_multiple_words:
-- Use keys 1-9 on the numeric keypad to toggle a highlight group number.
-
 ==============================================================================
 HISTORY								*mark-history*
+
+2.8.0	01-Jun-2013
+- Also allow a [count] for <Leader>r to select (or query for) a mark group, as
+  with <Leader>m.
+- CHG: Also set the current mark to the used mark group when a mark was set
+  via <Leader>r and :Mark so that it is easier to determine whether the
+  entered pattern actually matches anywhere. Thanks to Xiaopan Zhang for
+  notifying me about this problem.
+- Add <Plug>MarkSearchGroupNext / <Plug>MarkSearchGroupPrev to enable
+  searching for particular mark groups. Thanks to Xiaopan Zhang for the
+  suggestion.
+- Define default mappings for keys 1-9 on the numerical keypad to jump to a
+  particular group (backwards with <C-kN>). Their definition is controlled by
+  the new g:mwDirectGroupJumpMappingNum variable.
+- ENH: Allow to store an arbitrary number of marks via named slots that can
+  optionally be passed to :MarkLoad / :MarkSave. If the slot is all-uppercase,
+  the marks will also be persisted across Vim invocations.
 
 2.7.2	15-Oct-2012
 - Issue an error message "No marks defined" instead of moving the cursor by
@@ -584,7 +642,7 @@ Initial version published by Yuheng Xie on vim.org.
 ==============================================================================
 Copyright: (C) 2005-2008 Yuheng Xie
            (C) 2008-2012 Ingo Karkat
-The VIM LICENSE applies to this script; see |copyright|.
+The VIM LICENSE applies to this plugin; see |copyright|.
 
 Maintainer:	Ingo Karkat <ingo@karkat.de>
 ==============================================================================
