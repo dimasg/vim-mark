@@ -10,8 +10,13 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.8.0
+" Version:     2.8.1
 " Changes:
+" 20-Jun-2013, Ingo Karkat
+" - ENH: Implement command completion for :[N]Mark that offers existing mark
+"   patterns (from group [N] / all groups), both as one regular expression and
+"	individual alternatives. The leading \< can be omitted.
+"
 " 29-May-2013, Ingo Karkat
 " - Factor out s:HasVariablePersistence() and include the note in :MarkLoad,
 "   too.
@@ -472,10 +477,10 @@ function! mark#ClearAll()
 	endwhile
 	let s:lastSearch = -1
 
-" Re-enable marks; not strictly necessary, since all marks have just been
-" cleared, and marks will be re-enabled, anyway, when the first mark is added.
-" It's just more consistent for mark persistence. But save the full refresh, as
-" we do the update ourselves.
+	" Re-enable marks; not strictly necessary, since all marks have just been
+	" cleared, and marks will be re-enabled, anyway, when the first mark is
+	" added. It's just more consistent for mark persistence. But save the full
+	" refresh, as we do the update ourselves.
 	call s:MarkEnable(0, 0)
 
 	call s:MarkScope(l:indices, '')
@@ -510,6 +515,10 @@ function! s:EchoMarkCleared( groupNum )
 endfunction
 function! s:EchoMarksDisabled()
 	echo 'All marks disabled'
+endfunction
+
+function! s:SplitIntoAlternatives( pattern )
+	return split(a:pattern, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\|')
 endfunction
 
 " Return [success, markGroupNum]. success is true when the mark has been set or
@@ -567,7 +576,7 @@ function! mark#DoMark( groupNum, ...)
 		let existingPattern = s:pattern[l:groupNum - 1]
 		if ! empty(existingPattern)
 			" Split only on \|, but not on \\|.
-			let alternatives = split(existingPattern, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\|')
+			let alternatives = s:SplitIntoAlternatives(existingPattern)
 			if index(alternatives, regexp) == -1
 				let regexp = existingPattern . '\|' . regexp
 			else
@@ -988,7 +997,7 @@ function! s:SavePattern( ... )
 		catch /^Vim\%((\a\+)\)\=:E/
 			" v:exception contains what is normally in v:errmsg, but with extra
 			" exception source info prepended, which we cut away.
-			call s:ErrorMsg(substitute(v:exception, '^Vim\%((\a\+)\)\=:', '', ''))
+			call s:ErrorMsg(substitute(v:exception, '^\CVim\%((\a\+)\)\=:', '', ''))
 			return -1
 		endtry
 	else
@@ -1031,7 +1040,7 @@ function! s:GetMarker( index, nextGroupIndex )
 	return l:marker
 endfunction
 function! s:GetAlternativeCount( pattern )
-	return len(split(a:pattern, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\|'))
+	return len(s:SplitIntoAlternatives(a:pattern))
 endfunction
 function! s:PrintMarkGroup( nextGroupIndex )
 	for i in range(s:markNum)
@@ -1088,6 +1097,41 @@ endfunction
 
 function! mark#GetGroupNum()
 	return s:markNum
+endfunction
+
+
+" :Mark command completion.
+function! mark#Complete( ArgLead, CmdLine, CursorPos )
+	let l:cmdlineBeforeCursor = strpart(a:CmdLine, 0, a:CursorPos)
+	let l:matches = matchlist(l:cmdlineBeforeCursor, '\C\(\d*\)\s*Mark!\?\s\+\V' . escape(a:ArgLead, '\'))
+	if empty(l:matches)
+		return []
+	endif
+
+	" Complete from the command's mark group, or all groups when none is
+	" specified.
+	let l:groupNum = 0 + l:matches[1]
+	let l:patterns =(l:groupNum == 0 || empty(get(s:pattern, l:groupNum - 1, '')) ? filter(copy(s:pattern), '! empty(v:val)') : [s:pattern[l:groupNum - 1]])
+
+	" Complete both the entire pattern as well as its individual alternatives.
+	let l:expandedPatterns = []
+	for l:pattern in l:patterns
+		if index(l:expandedPatterns, l:pattern) == -1
+			call add(l:expandedPatterns, l:pattern)
+		endif
+		let l:alternatives = s:SplitIntoAlternatives(l:pattern)
+		if len(l:alternatives) > 1
+			for l:alternative in l:alternatives
+				if index(l:expandedPatterns, l:alternative) == -1
+					call add(l:expandedPatterns, l:alternative)
+				endif
+			endfor
+		endif
+	endfor
+
+	" Filter according to the argument lead. Allow to omit the frequent initial
+	" \< atom in the lead.
+	return filter(l:expandedPatterns, "v:val =~ '^\\%(\\\\<\\)\\?\\V' . " . string(escape(a:ArgLead, '\')))
 endfunction
 
 

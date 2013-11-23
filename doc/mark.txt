@@ -50,6 +50,10 @@ RELATED WORKS								     *
 - Highlight (http://www.drchip.org/astronaut/vim/index.html#HIGHLIGHT) has
   commands and mappings for highlighting and searching, uses matchadd(), but
   limits the scope of highlightings to the current window.
+- TempKeyword (vimscript #4636) is a simple plugin that can matchadd() the
+  word under the cursor with \0 - \9 mappings. (And clear with \c0 etc.)
+- simple_highlighting (vimscript #4688) has commands and mappings to highlight
+  8 different slots in all buffers.
 
 ==============================================================================
 USAGE								  *mark-usage*
@@ -102,12 +106,13 @@ HIGHLIGHTING						   *mark-highlighting*
 
 								       *:Mark*
 :[N]Mark		Clear the marks represented by highlight group [N].
-:[N]Mark {pattern}	Mark or unmark {pattern}. Unless [N] is given, the
-			next free highlight group is used.
-			With [N], mark the word under the cursor with the
-			named highlight group [N]. When that group is not
-			empty, the word is added as an alternative match, so
-			you can highlight multiple words with the same color.
+:[N]Mark[!] {pattern}	Mark or unmark {pattern}. Unless [N] is given, the
+			next free highlight group is used for marking.
+			With [N], mark {pattern} with the named highlight
+			group [N]. When that group is not empty, the word is
+			added as an alternative match, so you can highlight
+			multiple words with the same color, unless [!] is
+			given; then, {pattern} overrides the existing mark.
 			When the word is already contained in the list of
 			alternatives, it is removed.
 			For implementation reasons, {pattern} cannot use the
@@ -409,6 +414,12 @@ IDEAS								  *mark-ideas*
 ==============================================================================
 HISTORY								*mark-history*
 
+2.8.1	22-Nov-2013
+- Allow to override the adding to existing marks via :[N]Mark! {pattern}.
+- ENH: Implement command completion for :[N]Mark that offers existing mark
+  patterns (from group [N] / all groups), both as one regular expression and
+  individual alternatives. The leading \< can be omitted.
+
 2.8.0	01-Jun-2013
 - Also allow a [count] for <Leader>r to select (or query for) a mark group, as
   with <Leader>m.
@@ -640,8 +651,8 @@ Last version published by Yuheng Xie on vim.org.
 Initial version published by Yuheng Xie on vim.org.
 
 ==============================================================================
-Copyright: (C) 2005-2008 Yuheng Xie
-           (C) 2008-2012 Ingo Karkat
+Copyright: (C) 2008-2013 Ingo Karkat
+           (C) 2005-2008 Yuheng Xie
 The VIM LICENSE applies to this plugin; see |copyright|.
 
 Maintainer:	Ingo Karkat <ingo@karkat.de>
