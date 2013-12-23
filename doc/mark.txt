@@ -414,6 +414,10 @@ IDEAS								  *mark-ideas*
 ==============================================================================
 HISTORY								*mark-history*
 
+2.8.2	16-Dec-2013
+- BUG: :Mark cannot highlight patterns starting with a number. Use -range=0
+  instead of -count. Thanks to Vladimir Marek for reporting this.
+
 2.8.1	22-Nov-2013
 - Allow to override the adding to existing marks via :[N]Mark! {pattern}.
 - ENH: Implement command completion for :[N]Mark that offers existing mark

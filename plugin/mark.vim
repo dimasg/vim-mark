@@ -1,8 +1,8 @@
 ﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
-" Copyright:   (C) 2005-2008 Yuheng Xie
-"              (C) 2008-2013 Ingo Karkat
+" Copyright:   (C) 2008-2013 Ingo Karkat
+"              (C) 2005-2008 Yuheng Xie
 "   The VIM LICENSE applies to this script; see ':help copyright'.
 "
 " Maintainer:  Ingo Karkat <ingo@karkat.de>
@@ -14,8 +14,12 @@
 "  - mark.vim autoload script
 "  - mark/palettes.vim autoload script for additional palettes
 "
-" Version:     2.8.1
+" Version:     2.8.2
 " Changes:
+" 16-Dec-2013, Ingo Karkat
+" - BUG: :Mark cannot highlight patterns starting with a number. Use -range=0
+"   instead of -count. Thanks to Vladimir Marek for reporting this.
+"
 " 20-Jun-2013, Ingo Karkat
 " - Allow to override the adding to existing marks via :[N]Mark! {pattern}.
 "
@@ -401,7 +405,7 @@ delfunction s:MakeDirectGroupMappings
 
 "- commands -------------------------------------------------------------------
 
-command! -bang -count -nargs=? -complete=customlist,mark#Complete Mark if <bang>0 | silent call mark#DoMark(<count>, '') | endif | if !mark#DoMarkAndSetCurrent(<count>, <f-args>)[0] | echoerr printf('Only %d mark highlight groups', mark#GetGroupNum()) | endif
+command! -bang -range=0 -nargs=? -complete=customlist,mark#Complete Mark if <bang>0 | silent call mark#DoMark(<count>, '') | endif | if !mark#DoMarkAndSetCurrent(<count>, <f-args>)[0] | echoerr printf('Only %d mark highlight groups', mark#GetGroupNum()) | endif
 command! -bar MarkClear call mark#ClearAll()
 command! -bar Marks call mark#List()
 

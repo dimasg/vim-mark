@@ -1,8 +1,8 @@
 ﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
-" Copyright:   (C) 2005-2008 Yuheng Xie
-"              (C) 2008-2013 Ingo Karkat
+" Copyright:   (C) 2008-2013 Ingo Karkat
+"              (C) 2005-2008 Yuheng Xie
 "   The VIM LICENSE applies to this script; see ':help copyright'.
 "
 " Maintainer:  Ingo Karkat <ingo@karkat.de>
