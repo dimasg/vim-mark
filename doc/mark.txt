@@ -34,6 +34,15 @@ plugin offers the following advantages over the original:
 - Marks can be persisted, and patterns can be added / subtracted from
   mark highlight groups.
 
+SEE ALSO								     *
+
+- SearchAlternatives.vim (vimscript #4146) provides mappings and commands to
+  add and subtract alternative branches to the current search pattern.
+- SearchHighlighting.vim (vimscript #4320) can change the semantics of the
+  start command *, extends it to visual mode (like Mark) and has auto-search
+  functionality which instantly highlights the word under the cursor when
+  typing or moving around, like in many IDEs.
+
 RELATED WORKS								     *
 
 - MultipleSearch (vimscript #479) can highlight in a single window and in all
@@ -54,6 +63,8 @@ RELATED WORKS								     *
   word under the cursor with \0 - \9 mappings. (And clear with \c0 etc.)
 - simple_highlighting (vimscript #4688) has commands and mappings to highlight
   8 different slots in all buffers.
+- searchmatch (vimscript #4869) has commands and mappings for :[1,2,3]match,
+  in the current window only.
 
 ==============================================================================
 USAGE								  *mark-usage*
@@ -284,8 +295,8 @@ their number via: >
 <
 							*mark-colors-redefine*
 If none of the default highlightings suits you, define your own colors in your
-vimrc file (or anywhere before this plugin is sourced), in the following form
-(where N = 1..): >
+vimrc file (or anywhere before this plugin is sourced, but after any
+|:colorscheme|), in the following form (where N = 1..): >
     highlight MarkWordN ctermbg=Cyan ctermfg=Black guibg=#8CCBEA guifg=Black
 You can also use this form to redefine only some of the default highlightings.
 If you want to avoid losing the highlightings on |:colorscheme| commands, you
@@ -367,7 +378,6 @@ If you need more / less groups, this can be configured via: >
 Set to 0 to completely turn off the keypad mappings. This is easier than
 remapping all <Plug>-mappings.
 
-
 						 *mark-whitespace-indifferent*
 Some people like to create a mark based on the visual selection, like
 |v_<Leader>m|, but have whitespace in the selection match any whitespace when
@@ -375,17 +385,13 @@ searching (searching for "hello world" will also find "hello<Tab>world" as
 well as "hello" at the end of a line, with "world" at the start of the next
 line). The Vim Tips Wiki describes such a setup for the built-in search at
     http://vim.wikia.com/wiki/Search_for_visually_selected_text
-You can achieve the same with the Mark plugin through the following scriptlet: >
-    function! s:GetVisualSelectionAsLiteralWhitespaceIndifferentPattern()
-    	return substitute(escape(mark#GetVisualSelection(), '\' . '^$.*[~'), '\_s\+', '\\_s\\+', 'g')
-    endfunction
-    vnoremap <silent> <Plug>MarkWhitespaceIndifferent :<C-u>if !mark#DoMark(v:count, <SID>GetVisualSelectionAsLiteralWhitespaceIndifferentPattern())<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
-Using this, you can assign a new visual mode mapping <Leader>* >
-    vmap <Leader>* <Plug>MarkWhitespaceIndifferent
+You can achieve the same with the Mark plugin through the <Plug>MarkIWhiteSet
+mapping target: Using this, you can assign a new visual mode mapping <Leader>* >
+    xmap <Leader>* <Plug>MarkIWhiteSet
 or override the default |v_<Leader>m| mapping, in case you always want this
 behavior: >
     vmap <Plug>IgnoreMarkSet <Plug>MarkSet
-    vmap <Leader>m <Plug>MarkWhitespaceIndifferent
+    xmap <Leader>m <Plug>MarkIWhiteSet
 <
 ==============================================================================
 INTEGRATION						    *mark-integration*
@@ -413,6 +419,13 @@ IDEAS								  *mark-ideas*
 
 ==============================================================================
 HISTORY								*mark-history*
+
+2.8.3	23-May-2014
+- The additional mapping described under :help mark-whitespace-indifferent got
+  broken again by the refactoring of mark#DoMark() on 31-Jan-2013. Finally
+  include this in the script as <Plug>MarkIWhiteSet and
+  mark#GetVisualSelectionAsLiteralWhitespaceIndifferentPattern(). Thanks to
+  Greg Klein for noticing and prodding me to include it.
 
 2.8.2	16-Dec-2013
 - BUG: :Mark cannot highlight patterns starting with a number. Use -range=0
@@ -655,7 +668,7 @@ Last version published by Yuheng Xie on vim.org.
 Initial version published by Yuheng Xie on vim.org.
 
 ==============================================================================
-Copyright: (C) 2008-2013 Ingo Karkat
+Copyright: (C) 2008-2014 Ingo Karkat
            (C) 2005-2008 Yuheng Xie
 The VIM LICENSE applies to this plugin; see |copyright|.
 

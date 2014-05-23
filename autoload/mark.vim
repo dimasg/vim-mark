@@ -1,7 +1,7 @@
 ﻿" Script Name: mark.vim
 " Description: Highlight several words in different colors simultaneously.
 "
-" Copyright:   (C) 2008-2013 Ingo Karkat
+" Copyright:   (C) 2008-2014 Ingo Karkat
 "              (C) 2005-2008 Yuheng Xie
 "   The VIM LICENSE applies to this script; see ':help copyright'.
 "
@@ -10,8 +10,14 @@
 " Dependencies:
 "  - SearchSpecial.vim autoload script (optional, for improved search messages).
 "
-" Version:     2.8.1
+" Version:     2.8.3
 " Changes:
+" 23-May-2014, Ingo Karkat
+" - The additional mapping described under :help mark-whitespace-indifferent got
+"   broken again by the refactoring of mark#DoMark() on 31-Jan-2013. Finally
+"   include this in the script as <Plug>MarkIWhiteSet and
+"   mark#GetVisualSelectionAsLiteralWhitespaceIndifferentPattern().
+"
 " 20-Jun-2013, Ingo Karkat
 " - ENH: Implement command completion for :[N]Mark that offers existing mark
 "   patterns (from group [N] / all groups), both as one regular expression and
@@ -302,6 +308,9 @@ function! mark#GetVisualSelectionAsLiteralPattern()
 endfunction
 function! mark#GetVisualSelectionAsRegexp()
 	return substitute(mark#GetVisualSelection(), '\n', '', 'g')
+endfunction
+function! mark#GetVisualSelectionAsLiteralWhitespaceIndifferentPattern()
+	return substitute(escape(mark#GetVisualSelection(), '\' . '^$.*[~'), '\_s\+', '\\_s\\+', 'g')
 endfunction
 
 " Manually input a regular expression.
@@ -971,7 +980,7 @@ function! mark#LoadCommand( isShowMessages, ... )
 				echomsg printf('Loaded %d mark%s', l:loadedMarkNum, (l:loadedMarkNum == 1 ? '' : 's')) . (s:enabled ? '' : '; marks currently disabled')
 			endif
 		endif
-	catch /^Vim\%((\a\+)\)\=:E/
+	catch /^Vim\%((\a\+)\)\=:/
 		if exists('l:marksVariable')
 			call s:ErrorMsg(printf('Corrupted persistent mark info in %s', l:marksVariable), a:isShowMessages)
 			execute 'unlet!' l:marksVariable
@@ -994,7 +1003,7 @@ function! s:SavePattern( ... )
 			else
 				let g:MARK_{a:1} = string(l:savedMarks)
 			endif
-		catch /^Vim\%((\a\+)\)\=:E/
+		catch /^Vim\%((\a\+)\)\=:/
 			" v:exception contains what is normally in v:errmsg, but with extra
 			" exception source info prepended, which we cut away.
 			call s:ErrorMsg(substitute(v:exception, '^\CVim\%((\a\+)\)\=:', '', ''))
