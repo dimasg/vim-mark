@@ -420,6 +420,14 @@ IDEAS								  *mark-ideas*
 ==============================================================================
 HISTORY								*mark-history*
 
+2.8.4	19-Jun-2014
+- To avoid accepting an invalid regular expression (e.g. "\(blah") and then
+  causing ugly errors on every mark update, check the patterns passed by the
+  user for validity.
+- CHG: The :Mark command doesn't query for a mark when the passed mark group
+  doesn't exist (interactivity in Ex commands is unexpected). Instead, it
+  returns an error.
+
 2.8.3	23-May-2014
 - The additional mapping described under :help mark-whitespace-indifferent got
   broken again by the refactoring of mark#DoMark() on 31-Jan-2013. Finally

@@ -14,8 +14,15 @@
 "  - mark.vim autoload script
 "  - mark/palettes.vim autoload script for additional palettes
 "
-" Version:     2.8.3
+" Version:     2.8.4
 " Changes:
+" 16-Jun-2014, Ingo Karkat
+" - Change how errors of <Plug>MarkRegex are passed. In order to support the
+"   :echoerr of :Mark, and the added error messages for invalid regular
+"   expressions, store the message in v:errmsg, and :echoerr that explicitly in
+"   the mapping / command.
+" - Use new mark#SetMark() wrapper for :Mark.
+"
 " 23-May-2014, Ingo Karkat
 " - The additional mapping described under :help mark-whitespace-indifferent got
 "   broken again by the refactoring of mark#DoMark() on 31-Jan-2013. Finally
@@ -329,8 +336,8 @@ highlight def link SearchSpecialSearchType MoreMsg
 nnoremap <silent> <Plug>MarkSet               :<C-u>if !mark#MarkCurrentWord(v:count)<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 vnoremap <silent> <Plug>MarkSet               :<C-u>if !mark#DoMark(v:count, mark#GetVisualSelectionAsLiteralPattern())[0]<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 vnoremap <silent> <Plug>MarkIWhiteSet         :<C-u>if !mark#DoMark(v:count, mark#GetVisualSelectionAsLiteralWhitespaceIndifferentPattern())[0]<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
-nnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, '')<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
-vnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, mark#GetVisualSelectionAsRegexp())<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
+nnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, '')<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>if ! empty(v:errmsg)<Bar>echoerr v:errmsg<Bar>endif<Bar>endif<CR>
+vnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, mark#GetVisualSelectionAsRegexp())<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>if ! empty(v:errmsg)<Bar>echoerr v:errmsg<Bar>endif<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkClear             :<C-u>if !mark#DoMark(v:count, (v:count ? '' : mark#CurrentMark()[0]))[0]<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkAllClear          :<C-u>call mark#ClearAll()<CR>
 nnoremap <silent> <Plug>MarkToggle            :<C-u>call mark#Toggle()<CR>
@@ -413,7 +420,7 @@ delfunction s:MakeDirectGroupMappings
 
 "- commands -------------------------------------------------------------------
 
-command! -bang -range=0 -nargs=? -complete=customlist,mark#Complete Mark if <bang>0 | silent call mark#DoMark(<count>, '') | endif | if !mark#DoMarkAndSetCurrent(<count>, <f-args>)[0] | echoerr printf('Only %d mark highlight groups', mark#GetGroupNum()) | endif
+command! -bang -range=0 -nargs=? -complete=customlist,mark#Complete Mark if <bang>0 | silent call mark#DoMark(<count>, '') | endif | if !mark#SetMark(<count>, <f-args>)[0] | echoerr v:errmsg | endif
 command! -bar MarkClear call mark#ClearAll()
 command! -bar Marks call mark#List()
 
