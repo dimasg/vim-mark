@@ -14,8 +14,13 @@
 "  - mark.vim autoload script
 "  - mark/palettes.vim autoload script for additional palettes
 "
-" Version:     2.8.4
+" Version:     2.8.5
 " Changes:
+" 29-Oct-2014, Ingo Karkat
+" - ENH: Add alternative <Plug>MarkConfirmAllClear optional command that works
+"   like <Plug>MarkAllClear, but with confirmation. Thanks to Marcelo Montu for
+"   suggesting this!
+"
 " 16-Jun-2014, Ingo Karkat
 " - Change how errors of <Plug>MarkRegex are passed. In order to support the
 "   :echoerr of :Mark, and the added error messages for invalid regular
@@ -340,6 +345,7 @@ nnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, 
 vnoremap <silent> <Plug>MarkRegex             :<C-u>if !mark#MarkRegex(v:count, mark#GetVisualSelectionAsRegexp())<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>if ! empty(v:errmsg)<Bar>echoerr v:errmsg<Bar>endif<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkClear             :<C-u>if !mark#DoMark(v:count, (v:count ? '' : mark#CurrentMark()[0]))[0]<Bar>execute "normal! \<lt>C-\>\<lt>C-n>\<lt>Esc>"<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkAllClear          :<C-u>call mark#ClearAll()<CR>
+nnoremap <silent> <Plug>MarkConfirmAllClear   :<C-u>if confirm('Really delete all marks? This cannot be undone.', "&Yes\n&No") == 1<Bar>call mark#ClearAll()<Bar>endif<CR>
 nnoremap <silent> <Plug>MarkToggle            :<C-u>call mark#Toggle()<CR>
 
 nnoremap <silent> <Plug>MarkSearchCurrentNext :<C-u>call mark#SearchCurrentMark(0)<CR>
@@ -375,6 +381,7 @@ if !hasmapto('<Plug>MarkClear', 'n')
 	nmap <unique> <Leader>n <Plug>MarkClear
 endif
 " No default mapping for <Plug>MarkAllClear.
+" No default mapping for <Plug>MarkConfirmAllClear.
 " No default mapping for <Plug>MarkToggle.
 
 if !hasmapto('<Plug>MarkSearchCurrentNext', 'n')
